@@ -1,4 +1,4 @@
-**.pdf
-**.csv
-**.data
-**.json
+**/*.pdf
+**/*.csv
+**/*.data
+**/*.json
