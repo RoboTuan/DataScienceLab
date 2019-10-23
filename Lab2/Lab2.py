@@ -46,10 +46,10 @@ with open("./GLT_filtered.csv") as f:
                 if i == 1 and row[i] != '':
                     dataTemp[i].append(float(row[i]))
                 else:
-                    dataTemp[i].append(row[i])
+                    dataTemp[i].append(row[i])              
 
 
-# In[3]:
+# In[52]:
 
 
 # 2
@@ -79,7 +79,7 @@ for i, number in enumerate(dataTemp[1]):
             dataTemp[1][i] = sum/2
 
 
-# In[4]:
+# In[53]:
 
 
 # 3
@@ -102,9 +102,46 @@ print("Top 10 coldest measurements for Abidjan:")
 print()
 
 
+# In[85]:
+
+
+# 4 optional
+
+def getCityAvgTemp(city_name, data):
+    return [data[1][i] for i, city in enumerate(data[3]) if city == city_name]
+
+Rome = getCityAvgTemp("Rome", dataTemp)
+Bangkok = getCityAvgTemp("Bangkok", dataTemp)
+
+plt.hist(Rome, label='Rome')
+plt.hist(Bangkok, label='Bangkok')
+plt.title('Distribution of the average land temperatures for Rome and Bangkok')
+plt.legend()
+plt.show()
+
+
+# They are too high, maybe it was used a *Fahrenheit* scale
+
+# In[91]:
+
+
+# 5 optional
+
+def faToCel(data):
+    return list(map(lambda x: (x-32)/1.8, Bangkok))    # Fahrenheit to Celsius 
+
+BangkokCelsius = faToCel(Bangkok)
+
+plt.hist(Rome, label='Rome')
+plt.hist(BangkokCelsius, label='Bangkok')
+plt.title('Distribution of the average land temperatures for Rome and Bangkok')
+plt.legend()
+plt.show()
+
+
 # ## Exercise 2.2
 
-# In[5]:
+# In[3]:
 
 
 # 1
@@ -116,10 +153,13 @@ with open('./aclimdb_reviews_train.txt') as f:
     for row in csv.reader(f):
         if len(row) == 2:
             for i in range(2):
-                IMDB[i].append(row[i])
+                if i == 1:
+                    IMDB[i].append(int(row[i]))
+                else:
+                    IMDB[i].append(row[i])
 
 
-# In[6]:
+# In[4]:
 
 
 # 2
@@ -144,7 +184,7 @@ def tokenize(docs):
 IMDB_tokens = tokenize(IMDB[0])
 
 
-# In[7]:
+# In[5]:
 
 
 # 3
@@ -167,7 +207,7 @@ def TF(docs):
 tf_tokens = TF(IMDB_tokens)
 
 
-# In[16]:
+# In[6]:
 
 
 # 4
@@ -194,7 +234,7 @@ idf_ascending = [k for k,v in sorted(idf_tokens.items(), key = lambda x: x[1])]
 # prepositions, adverbs, articles, versbs an domain specific names (like movie, film, ecc..)
 
 
-# In[20]:
+# In[7]:
 
 
 # 5
@@ -209,8 +249,63 @@ def TFIDF(tf, idf):
 tdidf_tokens = TFIDF(tf_tokens, idf_tokens)
 
 
-# In[ ]:
+# In[31]:
 
 
+# 6 optional
 
+def clusterize(data, tdidf_data, train_index):    # Divide data into positive and negative comments
+    pos = []
+    neg = []
+    for i, score  in enumerate(IMDB[1]):
+        if i == train_index:    # the first document is for testing
+            continue
+        if score == 1:
+            pos.append(tdidf_data[i])
+        else:
+            neg.append(tdidf_data[i])
+    return pos, neg
+
+
+def norm(d):
+    """Compute the L2-norm of a vector representation."""
+    return sum([ tf_idf**2 for t, tf_idf in d.items() ])**.5
+
+def dot_product(d1, d2):
+    """Compute the dot product between two vector representations."""
+    word_set = set(list(d1.keys()) + list(d2.keys()))
+    return sum([(d1.get(d, 0.0) * d2.get(d, 0.0)) for d in word_set])
+
+def cosine_similarity(d1, d2):
+    """
+    Compute the cosine similarity between documents d1 and d2.
+    Input: two dictionaries representing the TF-IDF vectors for documents d1 and d2.
+    Output: the cosine similarity.
+    """
+    return dot_product(d1, d2) / (norm(d1) * norm(d2))
+
+def mean_similarity(cos_sim):
+    return sum(elem for elem in cos_sim)/len(cos_sim)
+
+
+test_document = tdidf_tokens[0]
+
+positive, negative = clusterize(IMDB, tdidf_tokens, 0)
+
+cosine_pos = []
+cosine_neg = []
+
+for elem in positive:
+    cosine_pos.append(cosine_similarity(elem, test_document))
+    
+for elem in negative:
+    cosine_neg.append(cosine_similarity(elem, test_document))
+    
+pos_mean = mean_similarity(cosine_pos)
+neg_mean = mean_similarity(cosine_neg)
+
+print(f"Mean of the cosine similarity in the positive group: {pos_mean}")
+print(f"Mean of the cosine similarity in the negative group: {neg_mean}")
+
+print("The 2 cosines are too close to discriminate")
 
